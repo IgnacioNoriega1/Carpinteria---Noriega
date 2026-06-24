@@ -1,0 +1,24 @@
+
+> carpinteria-gestion@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/inventario/InventoryList.tsx:228:28
+Type error: Property 'item' does not exist on type '{ success: boolean; item: { id: string; createdAt: Date; deletedAt: Date | null; name: string; updatedAt: Date; materialCategoryId: string; unit: string; supplierId: string | null; currentStock: number; minStock: number; unitCost: number; }; } | { ...; }'.
+  Property 'item' does not exist on type '{ success: boolean; error: any; }'.
+
+  226 |     });
+  227 |
+> 228 |     if (res.success && res.item) {
+      |                            ^
+  229 |       // Registrar transacción en el log local
+  230 |       const sup = suppliers.find(s => s.id === txSupplierId);
+  231 |       const newTxRecord = {
+Next.js build worker exited with code: 1 and signal: null

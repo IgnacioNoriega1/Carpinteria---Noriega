@@ -1,0 +1,23 @@
+
+> carpinteria-gestion@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+Failed to type check.
+
+./src/components/CutlistOptimizer.tsx:579:18
+Type error: Cannot find name 'formatARS'. Did you mean 'FormData'?
+
+  577 |               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display...
+  578 |               <span style={{ fontSize: '1.3rem', fontWeight: 700 }}>
+> 579 |                 {formatARS(optimizationResult.totals.totalSheetsCost)}
+      |                  ^
+  580 |               </span>
+  581 |             </div>
+  582 |             <div style={{ padding: '8px', textAlign: 'center' }}>
+Next.js build worker exited with code: 1 and signal: null

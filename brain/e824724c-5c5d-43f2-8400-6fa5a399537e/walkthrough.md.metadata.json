@@ -1,0 +1,5 @@
+{
+  "summary":  "Documentación de verificación final y walkthrough del Sistema de Gestión de Carpintería, cubriendo navegación sin 404, validación de todos los módulos requeridos (Proyectos, Inventario, Clientes, Empleados, Gastos, Respaldos) y persistencia real en SQLite con Prisma.",
+  "updatedAt":  "2026-06-24T16:21:28.973781400Z",
+  "userFacing":  true
+}

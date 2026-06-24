@@ -1,0 +1,23 @@
+
+> carpinteria-gestion@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.7s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/clientes/[id]/page.tsx:227:30
+Type error: Cannot find name 'Eye'.
+
+  225 |                         <td style={{ textAlign: 'right' }}>
+  226 |                           <Link href={`/proyectos/${p.id}`} className="btn btn-secondary ...
+> 227 |                             <Eye size={14} />
+      |                              ^
+  228 |                           </Link>
+  229 |                         </td>
+  230 |                       </tr>
+Next.js build worker exited with code: 1 and signal: null

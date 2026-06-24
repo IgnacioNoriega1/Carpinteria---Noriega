@@ -1,0 +1,24 @@
+
+> carpinteria-gestion@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.1s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/inventario/InventoryList.tsx:379:80
+Type error: Type '{ size: number; title: string; }' is not assignable to type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+
+  377 | ...
+  378 | ...
+> 379 | ...tStock} {isLow && <AlertTriangle size={14} title="Stock bajo el mínimo" />}
+      |                                               ^
+  380 | ...
+  381 | ...
+  382 | ...ck}</td>
+Next.js build worker exited with code: 1 and signal: null

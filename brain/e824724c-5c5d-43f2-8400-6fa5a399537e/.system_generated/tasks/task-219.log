@@ -1,0 +1,24 @@
+
+> carpinteria-gestion@0.1.0 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.1s
+  Running TypeScript ...
+Failed to type check.
+
+./src/app/respaldos/page.tsx:77:49
+Type error: Property 'error' does not exist on type '{ success: boolean; } | { success: boolean; error: any; }'.
+  Property 'error' does not exist on type '{ success: boolean; }'.
+
+  75 | ...     });
+  76 | ...   } else {
+> 77 | ...     setMessage({ type: 'error', text: res.error || 'Error al restaurar respaldo' });
+     |                                               ^
+  78 | ...   }
+  79 | ... } catch (err: any) {
+  80 | ...   setMessage({ type: 'error', text: 'El archivo seleccionado no tiene un formato JSON ...
+Next.js build worker exited with code: 1 and signal: null

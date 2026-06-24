@@ -1,0 +1,356 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Usuarios del Sistema (Roles y Acceso)
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  role      String     // "admin" | "operator"
+  password  String     // Contraseña encriptada/almacenada
+  createdAt DateTime   @default(now())
+  deletedAt DateTime?
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+// 2. Clientes
+model Client {
+  id          String    @id @default(uuid())
+  name        String    // Nombre y Apellido
+  companyName String?   // Razón Social (opcional)
+  taxId       String    // DNI / CUIT
+  phone       String
+  email       String
+  address     String
+  city        String
+  notes       String?   // Observaciones
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Baja lógica
+  projects    Project[]
+
+  @@map("clients")
+}
+
+// 3. Tipos de Mueble (Configurables)
+model FurnitureType {
+  id        String    @id @default(uuid())
+  name      String    @unique // Cocina, Placard, Alacena, Escritorio, etc.
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Baja lógica
+  projects  Project[]
+
+  @@map("furniture_types")
+}
+
+// 4. Categorías de Materiales (MDF, Melamina, Herrajes, etc.)
+model MaterialCategory {
+  id        String            @id @default(uuid())
+  name      String            @unique
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime?         // Baja lógica
+  materials ProjectMaterial[]
+  inventory Inventory[]
+
+  @@map("material_categories")
+}
+
+// 5. Categorías de Gastos (Combustible, Flete, Alquiler, etc.)
+model ExpenseCategory {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?         // Baja lógica
+  projectExpenses  ProjectExpense[]
+  overheadExpenses OverheadExpense[]
+
+  @@map("expense_categories")
+}
+
+// 6. Métodos de Pago (Efectivo, Transferencia, Cheque, etc.)
+model PaymentMethod {
+  id               String            @id @default(uuid())
+  name             String            @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?         // Baja lógica
+  payments         Payment[]
+  overheadExpenses OverheadExpense[]
+
+  @@map("payment_methods")
+}
+
+// 7. Proveedores
+model Supplier {
+  id                    String                 @id @default(uuid())
+  name                  String
+  phone                 String?
+  email                 String?
+  address               String?
+  notes                 String?
+  active                Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  deletedAt             DateTime?              // Baja lógica
+  inventory             Inventory[]
+  projectMaterials      ProjectMaterial[]
+  projectExpenses       ProjectExpense[]
+  overheadExpenses      OverheadExpense[]
+  inventoryTransactions InventoryTransaction[]
+
+  @@map("suppliers")
+}
+
+// 8. Empleados (Entidad independiente)
+model Employee {
+  id          String            @id @default(uuid())
+  name        String            // Nombre y Apellido
+  phone       String?
+  email       String?
+  ratePerDay  Float             // Valor por día por defecto
+  active      Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?         // Baja lógica
+  workRecords ProjectEmployee[] // Relación con días trabajados
+
+  @@map("employees")
+}
+
+// 9. Proyectos / Trabajos
+model Project {
+  id                    String            @id @default(uuid())
+  clientId              String
+  client                Client            @relation(fields: [clientId], references: [id])
+  projectNumber         String            @unique // Nro de Proyecto secuencial (ej: PRJ-001)
+  furnitureTypeId       String
+  furnitureType         FurnitureType     @relation(fields: [furnitureTypeId], references: [id])
+  description           String            // Descripción del proyecto/mueble
+  createdAt             DateTime          @default(now())
+  startDate             DateTime?         // Fecha de inicio real
+  estimatedDeliveryDate DateTime?         // Fecha estimada de entrega
+  actualDeliveryDate    DateTime?         // Fecha real de entrega
+  priority              String            // "baja" | "media" | "alta"
+  status                String            // "presupuesto" | "a_confirmar" | "confirmado" | "en_proceso" | "finalizado" | "entregado" | "cancelado"
+  paymentStatus         String            @default("pendiente") // "pendiente" | "parcial" | "pagado"
+  workOrderNotes        String?           // Notas especiales para orden de trabajo / taller
+  
+  // Datos económicos del presupuesto acordado y cobros
+  agreedPrice           Float             @default(0) // Precio acordado final
+  depositReceived       Float             @default(0) // Seña recibida
+  files                 String            @default("[]") // JSON text: [{ name: string, url: string, type: string, size: number }]
+  
+  // Datos económicos del presupuesto estimado inicial
+  estimatedBudget       Float?            // Presupuesto estimado global
+  estimatedLaborCost    Float             @default(0)
+  estimatedLaborDays    Float             @default(0)
+  estimatedOtherExpenses Float            @default(0)
+  estimatedProfit       Float             @default(0)
+  
+  updatedAt             DateTime          @updatedAt
+  deletedAt             DateTime?         // Baja lógica
+  
+  // Relaciones
+  materials             ProjectMaterial[]
+  labor                 ProjectLabor[]
+  employees             ProjectEmployee[]
+  expenses              ProjectExpense[]
+  payments              Payment[]
+  cutlist               Cutlist?
+  overheadExpenses      OverheadExpense[]
+
+  @@map("projects")
+}
+
+// 10. Costos de Proyecto: Materiales
+model ProjectMaterial {
+  id                  String           @id @default(uuid())
+  projectId           String
+  project             Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  materialName        String           // Ej: Placa de melamina blanca 18mm
+  materialCategoryId  String
+  materialCategory    MaterialCategory @relation(fields: [materialCategoryId], references: [id])
+  quantity            Float
+  unit                String           // "u" | "m" | "m2" | "placa"
+  unitPrice           Float
+  totalPrice          Float
+  inventoryMaterialId String?          // Enlace opcional a Inventario
+  inventoryMaterial   Inventory?       @relation(fields: [inventoryMaterialId], references: [id])
+  supplierId          String?          // Proveedor opcional para compra directa
+  supplier            Supplier?        @relation(fields: [supplierId], references: [id])
+  fromCutlist         Boolean          @default(false) // Si fue generado automáticamente por el optimizador
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?        // Baja lógica
+
+  @@map("project_materials")
+}
+
+// 11. Costos de Proyecto: Mano de Obra (General / Tercerizada / Estimación global)
+model ProjectLabor {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description String    // Tarea (ej: Lijado especial, Pintura laqueada)
+  hoursOrDays Float
+  rate        Float
+  total       Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Baja lógica
+
+  @@map("project_labor")
+}
+
+// 12. Costos de Proyecto: Días Trabajados por Empleados (Productividad y Costo interno)
+model ProjectEmployee {
+  id           String    @id @default(uuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date         DateTime  // Fecha del día trabajado
+  daysWorked   Float     // Cantidad de días (ej: 1, 0.5)
+  ratePerDay   Float     // Valor acordado para ese día (permite congelar valor histórico)
+  total        Float     // Cálculo redundante: daysWorked * ratePerDay
+  notes        String?   // Tarea realizada (ej: "Lijado", "Instalación") para reporte de productividad
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? // Baja lógica
+
+  @@map("project_employees")
+}
+
+// 13. Costos de Proyecto: Otros Gastos Directos (Flete, Combustible, etc.)
+model ProjectExpense {
+  id                String          @id @default(uuid())
+  projectId         String
+  project           Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenseCategoryId String
+  expenseCategory   ExpenseCategory @relation(fields: [expenseCategoryId], references: [id])
+  description       String
+  amount            Float
+  supplierId        String?         // Proveedor que suministró el servicio/gasto
+  supplier          Supplier?       @relation(fields: [supplierId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?       // Baja lógica
+
+  @@map("project_expenses")
+}
+
+// 14. Pagos recibidos de Clientes
+model Payment {
+  id              String        @id @default(uuid())
+  projectId       String
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date            DateTime
+  amount          Float
+  paymentMethodId String
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?     // Baja lógica
+
+  @@map("payments")
+}
+
+// 15. Optimizador de Cortes (Placas y Piezas)
+model Cutlist {
+  projectId String   @id
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kerf      Float    @default(4.0)  // Espesor del disco de corte (mm)
+  edgeTrim  Float    @default(10.0) // Refilado de bordes de la placa (mm)
+  useGrain  Boolean  @default(true) // Respetar dirección de la veta
+  parts     String   // JSON String: piezas a cortar [{ length, width, qty, label, material, thickness, notes }]
+  sheets    String   // JSON String: placas disponibles [{ length, width, qty, material, thickness, cost, notes }]
+  results   String?  // JSON String: resultado del plano y optimización calculada
+  updatedAt DateTime @updatedAt
+
+  @@map("cutlists")
+}
+
+// 16. Gastos Generales / Fijos del Taller (Ej: Alquiler, Luz)
+model OverheadExpense {
+  id                String          @id @default(uuid())
+  date              DateTime
+  expenseCategoryId String
+  expenseCategory   ExpenseCategory @relation(fields: [expenseCategoryId], references: [id])
+  description       String
+  amount            Float
+  paymentMethodId   String
+  paymentMethod     PaymentMethod   @relation(fields: [paymentMethodId], references: [id])
+  projectId         String?         // Opcional: enlace a proyecto para gastos semi-indirectos
+  project           Project?        @relation(fields: [projectId], references: [id])
+  supplierId        String?         // Proveedor del servicio/gasto
+  supplier          Supplier?       @relation(fields: [supplierId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?       // Baja lógica
+
+  @@map("overhead_expenses")
+}
+
+// 17. Inventario / Materiales en Stock
+model Inventory {
+  id                 String                 @id @default(uuid())
+  name               String                 // Nombre del material
+  materialCategoryId String
+  materialCategory   MaterialCategory       @relation(fields: [materialCategoryId], references: [id])
+  unit               String                 // u, m, m2, placa
+  currentStock       Float
+  minStock           Float                  // Umbral para alerta de faltante
+  unitCost           Float                  // Costo unitario promedio
+  supplierId         String?                // Proveedor principal asociado
+  supplier           Supplier?              @relation(fields: [supplierId], references: [id])
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  deletedAt          DateTime?              // Baja lógica
+  transactions       InventoryTransaction[]
+  materials          ProjectMaterial[]      // Consumos históricos
+
+  @@map("inventory")
+}
+
+// 18. Transacciones de Inventario (Entradas, Salidas y Ajustes)
+model InventoryTransaction {
+  id          String    @id @default(uuid())
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  date        DateTime
+  type        String    // "entrada" | "salida" | "ajuste"
+  quantity    Float     // Cantidad de movimiento
+  supplierId  String?   // Proveedor que suministró (para entradas)
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  notes       String?   // Detalle o motivo
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("inventory_transactions")
+}
+
+// 19. Auditoría de Cambios
+model AuditLog {
+  id        String   @id @default(uuid())
+  tableName String   // Nombre de la tabla afectada
+  recordId  String   // ID del registro
+  action    String   // "insert" | "update" | "delete"
+  oldValues String?  // JSON String
+  newValues String?  // JSON String
+  userId    String?  // Usuario
+  user      User?    @relation(fields: [userId], references: [id])
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
