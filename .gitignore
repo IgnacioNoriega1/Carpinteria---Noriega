@@ -1,0 +1,17 @@
+scratch/carpinteria-gestion/env
+# Dependencias
+node_modules
+
+# Next.js
+.next
+
+# Variables de entorno
+.env
+.env.local
+
+# Base de datos SQLite
+dev.db
+prisma/dev.db
+
+# Logs
+*.log
